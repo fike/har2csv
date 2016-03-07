@@ -1,0 +1,57 @@
+#!/usr/bin/env ruby
+#--
+# Copyright 2016 by Fernando Ike <fike@midstorm.org>.
+# All rights reserved.
+# This script is under MIT License
+#
+# har2csv exports some har headers and values to csv.
+#++
+
+require 'addressable/uri'
+require 'json'
+require 'csv'
+
+if ARGV.length != 1
+  puts "#{__FILE__} /path/to/archive.har"
+  exit 1
+end
+
+archive = nil
+
+csv_file = (ARGV[0]).gsub(/\.har$/, '.csv')
+
+begin
+  archive = JSON.parse(File.read(ARGV.shift))
+rescue => err
+  puts "could not parse archive file: #{err.to_s}"
+end
+
+entries = archive['log']['entries']
+
+response_headers = entries.map do |entry|
+  headers = entry['response']['headers'].map do |header|
+    res_header = header['name'].capitalize
+  end
+end
+
+response_headers.flatten!.uniq!
+response_headers.keep_if { |h|  h = 'X-Akamai-Session-Info'}
+response_headers.unshift('host','url')
+response_headers = response_headers.inject({}){ |h,(k,v)| h[k] = v; h}
+
+
+CSV.open(csv_file, 'a+', { :force_quotes => true, :write_headers => true, :headers => response_headers.map { |key, value| key} } ) do |csv|
+  data = entries.map do |entry|
+    host = { "host" => Addressable::URI.parse(entry['request']['url']).host }
+    url = { "url" => entry['request']['url'] }
+    res_headers = entry['response']['headers'].map do |res_header|
+      { res_header['name'].capitalize => res_header['value'] }
+    end
+
+    res_headers = response_headers.merge(res_headers.inject(&:merge))
+    res_headers = res_headers.merge(url).merge(host)
+    res_headers = res_headers.map { |key, value| value }
+    csv << res_headers
+
+  end
+end
