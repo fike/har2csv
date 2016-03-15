@@ -6,6 +6,7 @@
 #
 # har2csv exports some har headers and values to csv.
 #++
+
 require 'addressable/uri'
 require 'json'
 require 'csv'
@@ -13,26 +14,33 @@ require 'csv'
 
 class Har2csv
 
-  def loader
-    file = ARGV[0]
-    if file.nil?
-      file = 'test/www.fernandoike.com.har'
+  def harfile
+
+    if ARGV[0].nil?
+      puts "Please, add file path as argument!"
+      #exit 1
+    else
+      file = ARGV[0]
     end
-      if file.nil?
-        puts "Couldn't load file."
-        exit 1
-      end
+
+    File.read(file)
+  end
+
+  def parser(harfile)
 
     begin
-      archive = JSON.parse(File.read(file))
+      archive = JSON.parse(harfile)
       entries = archive['log']['entries']
     rescue => err
       puts "Could not parse archive file: #{err.to_s}"
+      #exit 1
     end
   end
 
-  def response_headers
-    response_headers = loader.map do |entry|
+
+
+  def response_headers(parser)
+    response_headers = parser.map do |entry|
       headers = entry['response']['headers'].map do |header|
         res_header = header['name'].capitalize
       end
@@ -45,22 +53,22 @@ class Har2csv
 
   end
 
-  def response_values
-    data = loader.map do |entry|
+  def response_values(parser)
+    response_values = parser.map do |entry|
     host = { "host" => Addressable::URI.parse(entry['request']['url']).host }
     url = { "url" => entry['request']['url'] }
     res_headers = entry['response']['headers'].map do |res_header|
       { res_header['name'].capitalize => res_header['value'] }
     end
 
-    res_headers = response_headers.merge(res_headers.inject(&:merge))
+    res_headers = response_headers(parser).merge(res_headers.inject(&:merge))
     res_headers = res_headers.merge(url).merge(host)
 
     end
 
   end
 
-  def export
+  def export(response_headers,response_values)
     csv_file = (("test/www.fernandoike.com.har").gsub(/\.har$/, '.csv'))
     CSV.open(csv_file, 'a+', { :force_quotes => true, :write_headers => true, :headers => response_headers.map { |key, value| key} } ) do |csv|
       response_values.map do |val|
@@ -70,9 +78,4 @@ class Har2csv
     end
   end
 
-
 end
-
-
-har = Har2csv.new
-har.export
