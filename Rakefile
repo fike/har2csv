@@ -1,4 +1,8 @@
-require 'test/unit'
+require 'rake/testtask'
 
+Rake::TestTask.new do |t|
+  t.libs << 'test'
+end
 
-system("har2csv test/www.fernandoike.com.har") or raise "Failed!"
+desc "Run tests"
+task :default => :test

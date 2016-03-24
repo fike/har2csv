@@ -4,17 +4,26 @@
 # All rights reserved.
 # This script is under MIT License
 #
-# har2csv exports some har headers and values to csv.
+# har2csv exports har headers and values to csv.
 #++
+
+$LOAD_PATH.unshift(File.expand_path("../lib", File.dirname(__FILE__)))
 
 require 'har2csv'
 
-har = Har2csv.new
+if ARGV[0].nil?
+  puts "Please, add a har file path!"
+  exit 1
+end
 
-harfile = File.read('test/www.fernandoike.com.har')
+harfile = File.read(ARGV[0])
+
+har = Har2csv.new
 
 parser = har.parser(harfile)
 
 response_headers = har.response_headers(parser)
 
-har.response_values(parser)
+response_values = har.response_values(parser)
+
+har.export(response_headers,response_values)

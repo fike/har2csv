@@ -4,13 +4,8 @@
 # All rights reserved.
 # This script is under LGPL-2
 #
-# har2csv exports some har headers and values to csv.
+# har2csv exports har headers and values to csv.
 #++
-
-require 'addressable/uri'
-require 'json'
-require 'csv'
-
 
 class Har2csv
 
@@ -79,3 +74,7 @@ class Har2csv
   end
 
 end
+
+require 'addressable/uri'
+require 'json'
+require 'csv'
